@@ -1,4 +1,21 @@
 document.addEventListener("DOMContentLoaded", function() {
+  // Auto-open modal if URL hash (or query param) matches a card
+function tryOpenCardFromUrl() {
+  let hash = window.location.hash;
+  if (hash && hash.startsWith('#card-')) {
+    let cardId = hash.replace('#card-', '');
+    let cardEl = Array.from(document.querySelectorAll('.mgmt-advanced-card')).find(c => {
+      const member = JSON.parse(c.getAttribute('data-member') || '{}');
+      return String(member.id) === cardId;
+    });
+    if (cardEl) {
+      const member = JSON.parse(cardEl.getAttribute('data-member') || '{}');
+      showModal(member);
+    }
+  }
+}
+document.addEventListener('DOMContentLoaded', tryOpenCardFromUrl);
+
   // Navbar hide/show on scroll
   const navbar = document.getElementById('mainNav');
   navbar.style.transform = "translateY(-100%)";
@@ -13,7 +30,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Sophisticated Hero Slideshow
   const images = [
-    'assets/img/image1.jpg',
+    'assets/img/image1.jpg', 
     'assets/img/image2.jpg',
     'assets/img/image3.jpg',
     'assets/img/image4.jpg'
@@ -325,3 +342,200 @@ document.addEventListener("DOMContentLoaded", function() {
       alert("Sharing is not supported on this device.");
     }
   }
+
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const memberId = btn.dataset.id;
+        fetch(`/delete_member_ajax/${memberId}`, { method: 'DELETE' })
+            .then(res => {
+                if (res.ok) {
+                    btn.closest('tr').remove();  // remove row from table
+                } else {
+                    alert("Error deleting member");
+                }
+            });
+    });
+});
+  function toggleBio(index) {
+    const bio = document.getElementById(`bio-${index}`);
+    const link = bio.nextElementSibling;
+    bio.classList.toggle('expanded');
+    link.textContent = bio.classList.contains('expanded') ? 'Show less' : 'Read more';}
+
+
+// Future slider logic or interactivity can go here for `.newnew123`
+document.addEventListener("DOMContentLoaded", () => {
+  const section = document.querySelector(".newnew123");
+  if (section) {
+    console.log("Pillars of Organisation loaded.");
+  }
+});
+// Animated Counters for Legal Hero
+document.addEventListener("DOMContentLoaded", function() {
+  const counters = document.querySelectorAll('.custom-counter');
+  counters.forEach(counter => {
+    const animateCounter = () => {
+      const target = +counter.getAttribute('data-target');
+      const duration = 1300;
+      const frameRate = 24;
+      const steps = Math.ceil(duration / frameRate);
+      let current = 0;
+      const increment = target / steps;
+      function updateCounter() {
+        current += increment;
+        if (current < target) {
+          counter.textContent = Math.floor(current);
+          setTimeout(updateCounter, frameRate);
+        } else {
+          counter.textContent = target + (target >= 1000 ? '+' : '');
+        }
+      }
+      updateCounter();
+    };
+    animateCounter(counter);
+  });
+});
+
+// Chatbot open/close
+document.addEventListener('DOMContentLoaded', () => {
+  const popup = document.getElementById('chatbot-popup');
+  const fab = document.getElementById('chatbot-fab');
+  const closeBtn = document.getElementById('chatbotCloseBtn');
+
+  // Show FAB after delay for animation
+  setTimeout(() => fab.classList.remove('d-none'), 600);
+
+  fab.addEventListener('click', () => {
+    popup.classList.remove('d-none');
+    fab.style.display = 'none';
+  });
+  closeBtn.addEventListener('click', () => {
+    popup.classList.add('d-none');
+    fab.style.display = '';
+  });
+
+  // Accessibility: close chatbot with Escape key
+  document.addEventListener('keydown', (e) => {
+    if (!popup.classList.contains('d-none') && e.key === 'Escape') {
+      popup.classList.add('d-none');
+      fab.style.display = '';
+    }
+  });
+});
+
+
+document.addEventListener('DOMContentLoaded', function () {
+  // Show tap hint briefly & animate wiggle
+  setTimeout(() => {
+    document.querySelectorAll('.mgmt-advanced-tap-hint').forEach(hint => {
+      hint.style.opacity = "1";
+    });
+  }, 600);
+  setTimeout(() => {
+    document.querySelectorAll('.mgmt-advanced-tap-hint').forEach(hint => {
+      hint.style.opacity = "0";
+    });
+  }, 4000);
+
+  setTimeout(() => {
+    document.querySelectorAll('.mgmt-advanced-card').forEach(card => {
+      card.setAttribute('data-animate', 'true');
+      setTimeout(() => card.removeAttribute('data-animate'), 800);
+    });
+  }, 1800);
+
+  // Show modal and fill data
+  function showModal(member) {
+    const modal = document.getElementById('mgmt-card-modal');
+    modal.classList.remove('d-none');
+    document.body.style.overflow = "hidden";
+
+    document.getElementById('mgmt-card-modal-name').textContent = member.name || '';
+    document.getElementById('mgmt-card-modal-role').textContent = member.designation || '';
+    document.getElementById('mgmt-card-modal-img').src = member.image_url || '';
+    document.getElementById('mgmt-card-modal-img').alt = member.name || '';
+    document.getElementById('mgmt-card-modal-bio').textContent = member.bio || '';
+
+    const socialRoot = document.getElementById('mgmt-card-modal-social');
+    socialRoot.innerHTML = '';
+    if (member.linkedin) {
+      socialRoot.innerHTML = `<a href="${member.linkedin}" target="_blank" rel="noopener" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>`;
+    }
+
+    const callBtn = document.getElementById('mgmt-modal-call-btn');
+    if (member.phone) {
+      callBtn.href = "tel:" + member.phone;
+      callBtn.style.display = "inline-flex";
+    } else {
+      callBtn.style.display = "none";
+    }
+
+    const whatsappBtn = document.getElementById('mgmt-modal-whatsapp-btn');
+    if (member.phone) {
+      const cleanPhone = member.phone.replace(/\D/g, '');
+      whatsappBtn.href = "https://wa.me/" + cleanPhone;
+      whatsappBtn.style.display = "inline-flex";
+    } else {
+      whatsappBtn.style.display = "none";
+    }
+
+    const shareBtn = document.getElementById('mgmt-modal-share-btn');
+    shareBtn.onclick = function () {
+  const cardUrl = window.location.origin + window.location.pathname + "#card-" + member.id;
+  if (navigator.share) {
+    navigator.share({
+      title: member.name + " - BD Arora And Associates",
+      text: "View the digital business card of " + member.name,
+      url: cardUrl,
+    });
+  } else {
+    navigator.clipboard.writeText(cardUrl);
+    shareBtn.textContent = "Copied card link!";
+    setTimeout(() => shareBtn.textContent = "Share Card", 1200);
+  }
+};
+window.history.replaceState(null, '', '#card-' + (member.id || ''));
+
+  }
+
+  // Click and keyboard handling
+  document.querySelectorAll('.mgmt-advanced-card').forEach(card => {
+    const member = JSON.parse(card.getAttribute('data-member') || '{}');
+    card.addEventListener('click', () => showModal(member));
+    card.addEventListener('keydown', e => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        showModal(member);
+      }
+    });
+  });
+
+  // Close modal handlers
+  function closeModal() {
+    const modal = document.getElementById('mgmt-card-modal');
+    modal.classList.add('d-none');
+    document.body.style.overflow = "";
+      document.getElementById('mgmt-card-modal').classList.add('d-none');
+  document.body.style.overflow = "";
+  window.history.replaceState(null, '', window.location.pathname);
+  }
+  document.getElementById('mgmtCardModalCloseBtn').onclick = closeModal;
+  document.getElementById('mgmt-card-modal').addEventListener('click', function (e) {
+    if (e.target === this || e.target.classList.contains('mgmt-card-modal-backdrop')) closeModal();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === "Escape" && !document.getElementById('mgmt-card-modal').classList.contains('d-none')) closeModal();
+  });
+});
+// Assuming you already load data-member into modal
+const whatsappBtn = document.getElementById("mgmt-modal-whatsapp-btn");
+
+if (member.phone) {
+  // remove spaces / special chars just in case
+  const phoneClean = member.phone.replace(/\D/g, '');
+  whatsappBtn.href = `https://wa.me/${phoneClean}`;
+  whatsappBtn.classList.remove("d-none");
+} else {
+  whatsappBtn.href = "#";
+  whatsappBtn.classList.add("d-none"); // hide if no phone
+}
